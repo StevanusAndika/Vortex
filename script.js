@@ -11,17 +11,21 @@ const interestRates = {
 };
 
 // Load Toyota data saat halaman dimuat
-document.addEventListener('DOMContentLoaded', async function() {
-    await loadToyotaData();
+document.addEventListener('DOMContentLoaded', function() {
+    loadToyotaData();
     setupEventListeners();
 });
 
-// Load data Toyota dari file JSON
-async function loadToyotaData() {
+// Load data Toyota dari variable global (menghindari CORS issues)
+function loadToyotaData() {
     try {
-        const response = await fetch('toyota.json');
-        toyotaData = await response.json();
-        console.log('Toyota data loaded:', toyotaData);
+        // Gunakan data dari toyota-data.js yang sudah di-load sebelumnya
+        if (typeof TOYOTA_DATA !== 'undefined') {
+            toyotaData = TOYOTA_DATA;
+            console.log('Toyota data loaded from embedded source:', toyotaData);
+        } else {
+            throw new Error('TOYOTA_DATA not found');
+        }
     } catch (error) {
         console.error('Error loading Toyota data:', error);
         showAlert('Gagal memuat data mobil Toyota. Silakan refresh halaman.', 'warning');
@@ -373,19 +377,30 @@ function createFinancialSummary(formData, capacity) {
 // Buat card mobil
 function createCarCard(car, index) {
     const isRecommended = index < 3; // 3 mobil pertama sebagai rekomendasi
-    const mainImage = car.images && car.images.length > 0 ? car.images[0] : 'https://via.placeholder.com/300x200?text=No+Image';
-    
+
+    // Daftar gambar mobil (random)
+    const carImages = [
+        'https://d1g6w7sntckt92.cloudfront.net/public/images/car_image/uE1JJvyYwULQQivDtzWKqsVToy0AxRFVu8GE9KHv.png',
+        'https://d1g6w7sntckt92.cloudfront.net/public/images/car_image/pcPvFg3TE7xUsFk4ect97F86UgPeV8kVgG0OdksZ.png',
+        'https://d1g6w7sntckt92.cloudfront.net/public/images/car_image/GkohUreZA39raraJHNawjPD9uh93NUbZGUWhAQy7.png',
+        'https://d1g6w7sntckt92.cloudfront.net/public/images/car_image/8Zc5HQe6y942JfjWGgcgIodjqaxIoKLJPO43zLWF.png',
+        'https://d1g6w7sntckt92.cloudfront.net/public/images/car_image/esJvZqigz3uRbRsgCB5xxND6gHSmKFHpIt0lKCwS.png',
+        'https://d1g6w7sntckt92.cloudfront.net/public/images/car_image/xX5WL9o9Tx7mn2yHoHkF5ewoRcdNlN4YfEmf6zbh.png',
+        'https://d1g6w7sntckt92.cloudfront.net/public/images/car_image/jbNe9XT2Jz1xotoNyoLzjFz41cq9DbfJ7UkP5pMm.png',
+        'https://d1g6w7sntckt92.cloudfront.net/public/images/car_image/JtWvbtVzUaps5FTcmWEtkKzTkSf4rn8C7OlaGAyW.png'
+    ];
+    // Pilih gambar random dari array di atas
+    const mainImage = carImages[Math.floor(Math.random() * carImages.length)];
+
     return `
         <div class="car-card slide-up">
             <div class="car-header">
-                <img src="${mainImage}" alt="${car.model}" class="car-image" 
-                     onerror="this.src='https://via.placeholder.com/300x200?text=Toyota+${car.series}'">
+                <img src="${mainImage}" alt="${car.model}" class="car-image">
                 ${isRecommended ? '<div class="recommended-badge"><i class="fas fa-star"></i> Rekomendasi</div>' : ''}
             </div>
             <div class="car-content">
                 <h3 class="car-title">${car.model}</h3>
                 <div class="car-price">${car.priceFormatted}</div>
-                
                 <div class="installment-info">
                     <div class="installment-row">
                         <span class="installment-label">Uang Muka:</span>
@@ -400,21 +415,18 @@ function createCarCard(car, index) {
                         <span class="installment-value">${formatCurrency(car.totalPayment)}</span>
                     </div>
                 </div>
-                
                 <div class="car-features">
                     <span class="feature-tag">${car.tenure} bulan</span>
                     <span class="feature-tag">${car.interestRate}% p.a</span>
                     <span class="feature-tag">${(car.affordabilityRatio * 100).toFixed(0)}% kemampuan</span>
                 </div>
-                
-                <button class="detail-btn" data-car-index="${index}">
-                    <i class="fas fa-eye"></i> Lihat Detail & Simulasi
+                <button class="detail-btn" data-car-index="${index}" title="Lihat Detail & Simulasi">
+                    <i class="fas fa-arrow-right"></i>
                 </button>
             </div>
         </div>
     `;
 }
-
 // Tampilkan detail mobil dalam modal
 function showCarDetail(car) {
     const modal = document.getElementById('carModal');
@@ -506,6 +518,51 @@ function createCarDetailModal(car) {
                 <li>Hubungi dealer Toyota terdekat untuk informasi lebih detail</li>
                 <li>Diperlukan dokumen lengkap untuk pengajuan kredit</li>
             </ul>
+        </div>
+        
+        <div class="sales-contact-section" style="margin-top: 20px;">
+            <h4><i class="fab fa-whatsapp"></i> Hubungi Sales Toyota Kami</h4>
+            <p style="margin-bottom: 15px; color: #6b7280;">Tim sales profesional siap membantu Anda dengan penawaran terbaik!</p>
+            <div class="sales-contact-grid">
+                <a href="https://wa.me/6285123456789?text=Halo%20Dhaffa%2C%20saya%20tertarik%20dengan%20${encodeURIComponent(car.model)}%20dan%20ingin%20konsultasi%20lebih%20lanjut" target="_blank" class="sales-contact-card">
+                    <div class="sales-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="sales-info">
+                        <h5>Dhaffa</h5>
+                        <span>Sales Consultant</span>
+                    </div>
+                    <div class="whatsapp-icon">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                </a>
+                
+                <a href="https://wa.me/6285123456790?text=Halo%20Rezananda%2C%20saya%20tertarik%20dengan%20${encodeURIComponent(car.model)}%20dan%20ingin%20konsultasi%20lebih%20lanjut" target="_blank" class="sales-contact-card">
+                    <div class="sales-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="sales-info">
+                        <h5>Rezananda</h5>
+                        <span>Sales Consultant</span>
+                    </div>
+                    <div class="whatsapp-icon">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                </a>
+                
+                <a href="https://wa.me/6285123456791?text=Halo%20Stevanus%2C%20saya%20tertarik%20dengan%20${encodeURIComponent(car.model)}%20dan%20ingin%20konsultasi%20lebih%20lanjut" target="_blank" class="sales-contact-card">
+                    <div class="sales-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="sales-info">
+                        <h5>Stevanus</h5>
+                        <span>Sales Consultant</span>
+                    </div>
+                    <div class="whatsapp-icon">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                </a>
+            </div>
         </div>
     `;
 }
